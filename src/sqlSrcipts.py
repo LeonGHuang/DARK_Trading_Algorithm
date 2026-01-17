@@ -1,4 +1,5 @@
 import os  # point to the environment variable without revealing them
+import sys
 
 import psycopg2  # used to connect to sql on pi
 from dotenv import (
@@ -25,8 +26,7 @@ def sql_connect():
             user=os.getenv("sqlUSER"),
             password=os.getenv("sqlPASSWORD"),
         )
-        print("connection to sql successful")
         return conn
 
     except:
-        return print("connection to sql has failed")
+        sys.exit("connection to sql has failed")

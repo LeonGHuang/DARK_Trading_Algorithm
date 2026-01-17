@@ -22,6 +22,8 @@ def name_check(name):
         sys.exit(f'{name} is not in database')
         
 def time_check(start, end):
+    if start > end:
+        sys.exit(f'start is later than end')
     for x in [start,end]:
         try:
             datetime.datetime.strptime(x,"%Y-%m-%dT%H:%M:%SZ")
