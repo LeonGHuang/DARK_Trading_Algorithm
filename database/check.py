@@ -10,15 +10,30 @@ def name(name):
     cursor = conn.cursor()
 
     query = f'''
-            SELECT 1 FROM itemdata
-            WHERE name = %s
-            '''
+        SELECT 1 FROM itemdata
+        WHERE name = %s
+        '''
     cursor.execute(query,(name,))
     
     result = cursor.fetchone()
     if result == None:
         return sys.exit(f'{name} not in database')
-        
+
+
+def item_id(item_id):
+    conn = sql.connect()
+    cursor = conn.cursor()
+
+    query = f'''
+        SELECT 1 FROM itemdata
+        WHERE id = %s
+        '''
+    cursor.execute(query,(item_id,))
+    
+    result = cursor.fetchone()
+    if result == None:
+        return sys.exit(f'{item_id} not in database')
+
 
 def time(start, end):
     if start > end:
