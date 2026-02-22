@@ -1,22 +1,20 @@
-import os  # point to the environment variable without revealing them
+import os  # variable saved on os
 import sys
 
-import psycopg2  # used to connect to sql on pi
-from dotenv import (
-    load_dotenv,  # sends var in ignore text files into environment variable
-)
+import psycopg2 
+from dotenv import load_dotenv # variable saved on .env files
 from sqlalchemy import create_engine
 
-
-def sql_engine():
+def engine():
     load_dotenv("/home/leon/projs/dark/gitignore/sql.env", override=True)
-    sql_engine = create_engine(
-        f"postgresql+psycopg2://{os.getenv('sqlUSER')}:{os.getenv('sqlPASSWORD')}@{os.getenv('sqlHOST')}:{os.getenv('sqlPORT')}/{os.getenv('sqlDATABASE')}"
-    )
+    sql_engine = create_engine(f"""
+        postgresql+psycopg2://{os.getenv('sqlUSER')}:{os.getenv('sqlPASSWORD')}
+        @{os.getenv('sqlHOST')}:{os.getenv('sqlPORT')}/{os.getenv('sqlDATABASE')}
+        """)
     return sql_engine
 
 
-def sql_connect():
+def connect():
     load_dotenv("/home/leon/projs/dark/gitignore/sql.env", override=True)
     try:
         conn = psycopg2.connect(
@@ -27,6 +25,5 @@ def sql_connect():
             password=os.getenv("sqlPASSWORD"),
         )
         return conn
-
     except:
         sys.exit("connection to sql has failed")

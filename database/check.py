@@ -1,27 +1,26 @@
-from sqlSrcipts import sql_connect
+from database import sql
 import sys
 import requests
 import datetime
 
 from http import HTTPStatus
 
-def name_check(name):
-    from sqlSrcipts import sql_connect
-    conn = sql_connect()
+def name(name):
+    conn = sql.connect()
     cursor = conn.cursor()
 
-    try: 
-        cursor.execute(f'''
-                        SELECT 1
-                        FROM itemdata
-                        WHERE name = '{name}'
-                        ''')
-        conn.close()
-    except: 
-        conn.close()
-        sys.exit(f'{name} is not in database')
+    query = f'''
+            SELECT 1 FROM itemdata
+            WHERE name = %s
+            '''
+    cursor.execute(query,(name,))
+    
+    result = cursor.fetchone()
+    if result == None:
+        return sys.exit(f'{name} not in database')
         
-def time_check(start, end):
+
+def time(start, end):
     if start > end:
         sys.exit(f'start is later than end')
     for x in [start,end]:
@@ -30,7 +29,8 @@ def time_check(start, end):
         except:
             sys.exit(f"{x} is incorret format")
 
-def url_check(url):
+
+def url(url):
     code = requests.get(url).status_code
     if code == 200: 
         pass
