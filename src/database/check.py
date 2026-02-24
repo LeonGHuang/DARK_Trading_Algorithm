@@ -6,48 +6,53 @@ import datetime
 from http import HTTPStatus
 
 def name(name):
-    conn = sql.connect()
-    cursor = conn.cursor()
+    try:
+        conn = sql.connect()
+        cursor = conn.cursor()
 
-    query = f'''
-        SELECT 1 FROM itemdata
-        WHERE name = %s
-        '''
-    cursor.execute(query,(name,))
-    
-    result = cursor.fetchone()
-    if result == None:
-        return sys.exit(f'{name} not in database')
+        query = f'''
+            SELECT 1 FROM itemdata
+            WHERE name = %s
+            '''
+        cursor.execute(query,(name,))
+        
+        result = cursor.fetchone()
+        if result == None:
+            return sys.exit(f'{name} not in database')
+    finally: conn.close()
 
 
 def item_id(item_id):
-    conn = sql.connect()
-    cursor = conn.cursor()
+    try:
+        conn = sql.connect()
+        cursor = conn.cursor()
 
-    query = f'''
-        SELECT 1 FROM itemdata
-        WHERE id = %s
-        '''
-    cursor.execute(query,(item_id,))
-    
-    result = cursor.fetchone()
-    if result == None:
-        return sys.exit(f'{item_id} not in database')
+        query = f'''
+            SELECT 1 FROM itemdata
+            WHERE id = %s
+            '''
+        cursor.execute(query,(item_id,))
+        
+        result = cursor.fetchone()
+        if result == None:
+            return sys.exit(f'{item_id} not in database')
+    finally: conn.close()
 
 def archetype(archetype):
-    conn = sql.connect()
-    cursor = conn.cursor()
+    try:
+        conn = sql.connect()
+        cursor = conn.cursor()
 
-    query = f'''
-        SELECT 1 FROM archetype
-        WHERE id = %s
-        '''
-    cursor.execute(query,(archetype,))
-    
-    result = cursor.fetchone()
-    if result == None:
-        return sys.exit(f'{archetype} not in database')
-
+        query = f'''
+            SELECT 1 FROM itemdata
+            WHERE archetype = %s
+            '''
+        cursor.execute(query,(archetype,))
+        
+        result = cursor.fetchone()
+        if result == None:
+            return sys.exit(f'{archetype} not in database')
+    finally: conn.close()
 
 def time(start, end):
     if start > end:
