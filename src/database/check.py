@@ -34,6 +34,20 @@ def item_id(item_id):
     if result == None:
         return sys.exit(f'{item_id} not in database')
 
+def archetype(archetype):
+    conn = sql.connect()
+    cursor = conn.cursor()
+
+    query = f'''
+        SELECT 1 FROM archetype
+        WHERE id = %s
+        '''
+    cursor.execute(query,(archetype,))
+    
+    result = cursor.fetchone()
+    if result == None:
+        return sys.exit(f'{archetype} not in database')
+
 
 def time(start, end):
     if start > end:
