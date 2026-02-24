@@ -26,4 +26,4 @@ def connect():
         )
         return conn
     except:
-        sys.exit("connection to sql has failed")
+        return sys.exit("connection to sql has failed")

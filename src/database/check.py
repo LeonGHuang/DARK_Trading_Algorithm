@@ -1,4 +1,4 @@
-from database import sql
+from src.database import sql
 import sys
 import requests
 import datetime
