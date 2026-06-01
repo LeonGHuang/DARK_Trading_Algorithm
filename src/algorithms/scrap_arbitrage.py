@@ -10,65 +10,94 @@ import asyncio
 def fetch_cost(cursor):
     query = f"""
     SELECT * FROM scraping
+    ORDER BY id
     """
     cursor.execute(query)
     return cursor.fetchall()
     
-
-def fetch_items(cursor, rarity):
+def fetch_items(cursor):
     query = f"""
-    SELECT id, rarity, inventory_width, inventory_height
-    FROM item_data
+    SELECT 
+        i.id, 
+        i.rarity, 
+        i.inventory_width * i.inventory_height AS size,
+        s.cost_per_slot
+    FROM item_data AS i
+    LEFT JOIN scraping AS s
+    ON i.rarity = s.rarity
     WHERE type IN ('Armor', 'Weapon')
-    AND rarity = '{rarity}'
+    AND i.rarity NOT IN ('Poor', 'Common','Artifact')
+    AND i.rarity = 'Epic'
+    AND i.name NOT ILIKE ALL (SELECT name FROM recipes)
+    ORDER BY id
     """
     cursor.execute(query)
-    data = cursor.fetchall()
-    slots = [(x[0], x[1], (x[2] * (x[3]))) for x in data] 
-    return slots
-
-
+    return cursor.fetchall()
+    
 async def fetch_price(ses, sem_limit, item_id):
     async with sem_limit:
-        from_date = (datetime.now(timezone.utc) - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
-        url = f"https://api.darkerdb.com/v1/market?id={item_id}&from={from_date}&limit=50&sold=1"
+        from_date = (datetime.now(timezone.utc) - timedelta(minutes=60)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        url = f"https://api.darkerdb.com/v1/market?item_id={item_id.replace('\'', "'")}&from={from_date}&limit=50&sold=0"
         response =  await ses.get(url)
         data_body = (await response.json())['body']
         price_list = [x['price_per_unit'] for x in data_body]
         return price_list
 
 
-async def process_data(cursor, ses, sem_limit, item_id, rarity, size, cost_per_slot):
+
+
+
+async def item_prices(cursor, ses, sem_limit, item_id, rarity, size, cost_per_slot):
     price_list = await fetch_price(ses, sem_limit, item_id)
-    item_cost = int(np.percentile(price_list, 10)) if price_list else 0
-    scrap_cost = cost_per_slot * size
-    total_cost = item_cost + scrap_cost
-    return item_id, rarity, size, total_cost, item_cost, scrap_cost
+    item_cost = int(np.percentile(price_list, 30)) if price_list else 99999
+    price_per_slot = round(item_cost / size)
+    total_cost_per_slot = price_per_slot + cost_per_slot
+    return item_id, rarity, total_cost_per_slot, price_per_slot, item_cost, cost_per_slot
 
 
-async def filter_scrap():
-    d
+async def scrap_prices(cursor, ses, sem_limit):
+    async def fetch_with_rarity(item_id, rarity):
+        prices = await fetch_price(ses, sem_limit, item_id)
+        return rarity, int(np.mean(prices))
 
-    
+    tasks = [fetch_with_rarity(item_id, rarity) for item_id, rarity, cost_per_slot in fetch_cost(cursor)]
+    scrap_prices = await asyncio.gather(*tasks)
+    return scrap_prices
+
+
+
+
 async def main():
     conn = sql.connect_pc()
     cursor = conn.cursor()
 
     sem_limit = asyncio.Semaphore(50)
 
-    header = [('item_id', 'rarity', 'size', 'total_cost', 'item_cost', 'scrap_cost')]
+    header = [('item_id', 'rarity', 'total_cost_per_slot', 'price_per_slot', 'item_cost', 'cost_per_slot')]
     async with aiohttp.ClientSession() as ses:
+        
         tasks = [
-            process_data(cursor, ses, sem_limit, rarity, item_id, size, cost_per_slot)
-            for scrap_id, rarity, cost_per_slot in fetch_cost(cursor) 
-            for item_id, item_rarity, size in fetch_items(cursor, rarity)
+            item_prices(cursor, ses, sem_limit, item_id, rarity, size, scraping_cost)
+            for item_id, rarity, size, scraping_cost in fetch_items(cursor)
             ]
         rows = await asyncio.gather(*tasks)
 
     return header + rows
 
+        # e = await scrap_prices(cursor, ses, sem_limit)
+        # return e
+
+
 output = await main()
-# output[1:] = sorted(output[1:], key=lambda x: (x[3]), reverse=True)
-for row in output:
-    print(f"{row[0]:<10} {row[1]:<30} {row[2]:>15} {row[3]:>15} {row[4]:>15} {row[5]:>15}")
+
+
+def printing():
+    output[1:] = sorted(output[1:], key=lambda x: (x[2]), reverse=False)
+    for row in output:
+        print(f"{row[1]:<15} {row[0]:<35} {row[2]:>15} {row[3]:>15} {row[4]:>15} {row[5]:>15}")
+
+printing()
+
+
+
 
