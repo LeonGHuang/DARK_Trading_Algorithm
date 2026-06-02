@@ -1,14 +1,12 @@
-# %%
 import requests
 import os
 import pandas as pd
 
-# %%
+
 def url(page):
     url = f"https://api.darkerdb.com/v1/items?key={os.getenv("dark_api_key")}&limit=50&page={page}"
     return url
 
-# %%
 def item_data_fetch():
     with requests.Session() as ses:
         body_list = []
@@ -17,6 +15,3 @@ def item_data_fetch():
             req = ses.get(url(page))
             body_list.extend(req.json()['body'])
             print(f'page = {page}/{num_pages}', end="\r")
-    return body_list
-
-
