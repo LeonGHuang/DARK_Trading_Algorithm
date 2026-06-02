@@ -15,3 +15,4 @@ def item_data_fetch():
             req = ses.get(url(page))
             body_list.extend(req.json()['body'])
             print(f'page = {page}/{num_pages}', end="\r")
+    return body_list
