@@ -23,34 +23,32 @@ class darkerdb:
         self.names = [x[0] for x in cursor.fetchall()]
 
         cursor.execute("SELECT DISTINCT rarity FROM item_data")
-        self.rarity = [x[0] for x in cursor.fetchall()]
+        self.rarities = [x[0] for x in cursor.fetchall()]
 
         cursor.close()
         conn.close()
 
-    def para_check(self, **kwargs):
+    def _para_check(self, **kwargs):
         for key, val in kwargs.items():
             if val not in getattr(self, key):
-                sys.exit(f"{key} does not contain {val}")
+                sys.exit(f"\n{key} does not contain {val}\nensure key is pural and val is singular")
 
     def market(self, name, rarity, /, hours=24, page=1):
-        self.para_check(names = name, rarity = rarity)
+        self._para_check(names = name, rarities = rarity)
         from_date = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime("%Y-%m-%d")
         url =   f"https://api.darkerdb.com/v1/market?item={name.replace('\'', "’")}&rarity={rarity}"\
                 f"&from={from_date}&limit=50&page={page}"
         # print(f"{url}")
         return url
-
-# def price_history(self, item_id):
         
-
+        
 def fetch_darker(name, rarity, /, hours=24):
     db = darkerdb()
     with requests.Session() as ses:
         page_num = 1
         price_list = []
         while True:
-            if page_num >= 20: break #! page pagination is now limited to 1000 listings, switch to cursor pagination when fixed
+            if page_num > 21: break #! page pagination is now limited to 1000 listings, switch to cursor pagination when fixed
             url = db.market(name, rarity, hours=hours, page=page_num)
             fetch_body = ses.get(url).json()['body']
             price_list.extend((x['created_at'],x['price_per_unit'],x['has_sold']) for x in fetch_body)
@@ -80,17 +78,23 @@ def graph(name, rarity, data):
     ax.set_title(f'Daily Prices: {name} ({rarity})')
     ax.set_xlabel('Hour (UTC)')
     ax.set_ylabel('Price')
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M')) 
+    ax.xaxis.set_major_locator(mdates.DayLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%a %d')) 
+    ax.tick_params('x', which='major', rotation = 35, labelsize = '10')
+    ax.xaxis.set_minor_locator(mdates.HourLocator(interval=1))
+    ax.xaxis.set_minor_formatter(mdates.DateFormatter('%H:%M')) 
+    ax.tick_params('x', which='minor', rotation = 35, labelsize='7')
+
     plt.show()
 
 def main(name, rarity):
-    data = fetch_darker(name, rarity, hours=24)
+    data = fetch_darker(name, rarity, hours=72)
     process = process_data(data)
     hourly = groupby_hour(process)
     graph(name, rarity, hourly)
     # return hourly   
 
-e = main("Rotten Fluids", "Rare")
+e = main("Potion of Protection", "Epic")
 e
 
 
@@ -103,5 +107,6 @@ e
 #     for x in output:
 #         print(f'{x[0]} {x[1]:>6} {x[2]}')
 #     os.system(f"echo {name} {rarity}")
+
 
 
