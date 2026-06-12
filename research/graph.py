@@ -1,14 +1,16 @@
 import sys
-import os
+import subprocess
 from datetime import datetime, timedelta, timezone
 
+import catppuccin
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import requests
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 
 import src.database.scripts.sql as sql
+
 
 
 class darkerdb:
@@ -71,31 +73,33 @@ def groupby_hour(data):
     df[0] = pd.to_datetime(df[0])
     hourly_price = df.groupby(pd.Grouper(key=0, freq='h'))[1].mean()
     return hourly_price 
+   
 
 def graph(name, rarity, data):
+    plt.style.use("mocha")
+
     fig, ax = plt.subplots()
     ax.plot(data.index, data.values)
     ax.set_title(f'Daily Prices: {name} ({rarity})')
-    ax.set_xlabel('Hour (UTC)')
+    ax.set_xlabel('Hour (utc)')
     ax.set_ylabel('Price')
     ax.xaxis.set_major_locator(mdates.DayLocator())
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%a %d')) 
-    ax.tick_params('x', which='major', rotation = 35, labelsize = '10')
-    ax.xaxis.set_minor_locator(mdates.HourLocator(interval=1))
+    ax.tick_params('x', which='major', rotation = 0, labelsize = '9')
+    ax.xaxis.set_minor_locator(mdates.HourLocator(byhour=range(0, 24, 6)))
     ax.xaxis.set_minor_formatter(mdates.DateFormatter('%H:%M')) 
-    ax.tick_params('x', which='minor', rotation = 35, labelsize='7')
-
+    ax.tick_params('x', which='minor', rotation = 0, labelsize='7')
     plt.show()
 
 def main(name, rarity):
+    subprocess.run('clear')
     data = fetch_darker(name, rarity, hours=72)
     process = process_data(data)
     hourly = groupby_hour(process)
     graph(name, rarity, hourly)
     # return hourly   
 
-e = main("Potion of Protection", "Epic")
-e
+e = main("Spectral Hilt", "Epic")
 
 
 # %%
@@ -107,6 +111,5 @@ e
 #     for x in output:
 #         print(f'{x[0]} {x[1]:>6} {x[2]}')
 #     os.system(f"echo {name} {rarity}")
-
 
 
