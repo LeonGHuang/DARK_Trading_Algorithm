@@ -12,7 +12,6 @@ import requests
 import src.database.scripts.sql as sql
 
 
-
 class darkerdb:
     def __init__(self):
         conn = sql.connect_pc()
@@ -57,6 +56,7 @@ def fetch_darker(name, rarity, /, hours=24):
             print(url, end='\r')
             if len(fetch_body) <50: break
             page_num += 1
+        print()
         return (price_list)
 
 
@@ -81,14 +81,16 @@ def graph(name, rarity, data):
     fig, ax = plt.subplots()
     ax.plot(data.index, data.values)
     ax.set_title(f'Daily Prices: {name} ({rarity})')
-    ax.set_xlabel('Hour (utc)')
+    ax.set_xlabel('Hour (UTC)')
     ax.set_ylabel('Price')
-    ax.xaxis.set_major_locator(mdates.DayLocator())
+    
+    ax.xaxis.set_major_locator(mdates.DayLocator(interval = 1))
+    ax.xaxis.set_minor_locator(mdates.HourLocator(byhour = range(0, 24, 6)))
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%a %d')) 
-    ax.tick_params('x', which='major', rotation = 0, labelsize = '9')
-    ax.xaxis.set_minor_locator(mdates.HourLocator(byhour=range(0, 24, 6)))
     ax.xaxis.set_minor_formatter(mdates.DateFormatter('%H:%M')) 
-    ax.tick_params('x', which='minor', rotation = 0, labelsize='7')
+    ax.tick_params('x', which='major', rotation = 0, labelsize = '8', pad=7)
+    ax.tick_params('x', which='minor', rotation = 0, labelsize = '7', pad=9)
+   
     plt.show()
 
 def main(name, rarity):
@@ -99,7 +101,7 @@ def main(name, rarity):
     graph(name, rarity, hourly)
     # return hourly   
 
-e = main("Spectral Hilt", "Epic")
+main("Spectral Hilt", "Epic")
 
 
 # %%
