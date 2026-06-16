@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 import numpy as np
 import aiohttp
 import asyncio
+import time 
 
 
 def sql_item():
@@ -23,8 +24,9 @@ def sql_item():
 
 async def fetch(session, conn_limit, name, rarity, vendor_price):
     async with conn_limit:
-        from_date = (datetime.now(timezone.utc) - timedelta(minutes=15)).strftime("%Y-%m-%dT%H:%M:%SZ")
-        url = f"https://api.darkerdb.com/v1/market?item={name.replace('\'', "'")}&rarity={rarity}&from={from_date}&limit=50&sold=0"
+        from_date = (datetime.now(timezone.utc) - timedelta(minutes=10)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        url = f"https://api.darkerdb.com/v1/market?item={name}&rarity={rarity}&from={from_date}&limit=50&sold=0"
+        print(url)
         response = await session.get(url)
         output = await response.json()
         response.release()
@@ -42,9 +44,12 @@ async def fetch(session, conn_limit, name, rarity, vendor_price):
 async def main():
     header = [('name', 'extractable', 'vendor_price', 'avg_margin', 'quantity', 'listings')]
     sem = asyncio.Semaphore(50)
+    start_time = time.perf_counter()
     async with aiohttp.ClientSession() as session:
         task = [fetch(session, sem, name, rarity, vendor_price) for name, rarity, vendor_price in sql_item()]
         rows = await asyncio.gather(*task)
+    end_time = time.perf_counter()
+    print(f'fetch time: {end_time - start_time}s')
     return header + list(rows)
 
 if __name__ == '__main__':
