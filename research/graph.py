@@ -1,6 +1,8 @@
 import sys
 import subprocess
 from datetime import datetime, timedelta, timezone
+import time
+import itertools
 
 import catppuccin
 import matplotlib.dates as mdates
@@ -8,6 +10,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import requests
+import aiohttp
+import asyncio
+
 
 import src.database.scripts.sql as sql
 
@@ -39,26 +44,49 @@ class darkerdb:
         from_date = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime("%Y-%m-%d")
         url =   f"https://api.darkerdb.com/v1/market?item={name.replace('\'', "’")}&rarity={rarity}"\
                 f"&from={from_date}&limit=50&page={page}"
-        # print(f"{url}")
+        print(f"{url}")
         return url
-        
-        
-def fetch_darker(name, rarity, /, hours=24):
-    db = darkerdb()
-    with requests.Session() as ses:
-        page_num = 1
-        price_list = []
-        while True:
-            if page_num > 21: break #! page pagination is now limited to 1000 listings, switch to cursor pagination when fixed
-            url = db.market(name, rarity, hours=hours, page=page_num)
-            fetch_body = ses.get(url).json()['body']
-            price_list.extend((x['created_at'],x['price_per_unit'],x['has_sold']) for x in fetch_body)
-            print(url, end='\r')
-            if len(fetch_body) <50: break
-            page_num += 1
-        print()
-        return (price_list)
 
+
+# def fetch_darker(name, rarity, /, hours=24):
+#     start = time.perf_counter()
+#     db = darkerdb()
+#     with requests.Session() as ses:
+#         page_num = 1
+#         price_list = []
+#         while True:
+#             if page_num > 21: break #! page pagination is now limited to 1000 listings, switch to cursor pagination when fixed
+#             url = db.market(name, rarity, hours=hours, page=page_num)
+#             fetch_body = ses.get(url).json()['body']
+#             price_list.extend((x['created_at'],x['price_per_unit'],x['has_sold']) for x in fetch_body)
+#             print(url, end='\r')
+#             if len(fetch_body) <50: break
+#             page_num += 1
+#         print()
+#         elapsed = time.perf_counter() - start
+#         print(f"took {elapsed:.2f}s")
+#         return (price_list)
+
+async def fetch_darker(ses, name, rarity, /, hours=24):
+    db = darkerdb()
+    page_count = itertools.count(1,1)
+    price_list = []
+    stop = asyncio.Event()
+        
+    async def worker():
+        while stop.is_set() == False:
+            page_num = next(page_count)
+            if page_num > 20: stop.set() #!HH page pagination is now limited to 1000 listings, switch to cursor pagination when fixed
+            url = db.market(name, rarity, hours=hours, page=page_num)
+            fetch = await ses.get(url) # sends requests, and waits for header
+            fetch = await fetch.json() # waits for body and deserialise it
+            fetch_body = fetch['body']
+            price_list.extend((x['created_at'],x['price_per_unit'],x['has_sold']) for x in fetch_body)
+            # print(url)
+            if len(fetch_body) <50: stop.set() #! doesnt work right now as page pagination return page 21 for any page > 21
+
+    await asyncio.gather(*[worker() for _ in range(5)])
+    return (price_list)
 
 # ! maybe use a different method
 def process_data(data):
@@ -71,9 +99,10 @@ def process_data(data):
 def groupby_hour(data):
     df = pd.DataFrame(data)
     df[0] = pd.to_datetime(df[0])
-    hourly_price = df.groupby(pd.Grouper(key=0, freq='h'))[1].mean()
-    return hourly_price 
-   
+    df = df.set_index(df[0])
+    hourly = df.resample('h')[1].mean()
+    # print(hourly)
+    return hourly
 
 def graph(name, rarity, data):
     plt.style.use("mocha")
@@ -93,25 +122,54 @@ def graph(name, rarity, data):
    
     plt.show()
 
-def main(name, rarity):
+def plot_by_day(name, rarity, data):
+    df = pd.DataFrame(data, columns=['created_at', 'price_per_unit', 'has_sold'])
+    df['created_at'] = pd.to_datetime(df['created_at'])
+    df['date'] = df['created_at'].dt.date
+    df['hour'] = df['created_at'].dt.hour
+
+    grouped = df.groupby(['date', 'hour'])['price_per_unit'].mean().unstack(level=0)
+    print(grouped)
+
+    plt.style.use('mocha')
+    fig, ax = plt.subplots()
+    ax.plot(grouped)
+
+    ax.set_title(f'Daily Prices: {name} ({rarity})')
+    ax.set_xlabel('Hour (UTC)')
+    ax.set_ylabel('Unit Price')
+
+    ax.set_xticks(range(0, 24, 6))
+    ax.set_xlim(0, 23)
+    ax.ticklabel_format(style='plain', axis='y')
+
+    ax.margins(0,.1)
+    ax.legend(
+    [f"{d.strftime('%a'):>3} {d.strftime('%d'):>2}" for d in grouped.columns],
+    prop={'family': 'monospace'}
+    )
+    plt.show()
+
+async def main(name, rarity):
     subprocess.run('clear')
-    data = fetch_darker(name, rarity, hours=72)
+    start_time = time.perf_counter()
+    async with aiohttp.ClientSession() as ses:
+        data = await fetch_darker(ses, name, rarity, hours=72)
+    end_time = time.perf_counter()
+    print(f'fetch time: {end_time - start_time}s')
     process = process_data(data)
     hourly = groupby_hour(process)
-    graph(name, rarity, hourly)
+    plot_by_day(name, rarity, process)
+    # graph(name, rarity, hourly)
     # return hourly   
-
-main("Spectral Hilt", "Epic")
-
-
-# %%
-# if __name__ == "__main__":
-#     name, rarity = "Spectral Hilt", "Epic"
-#     os.system("clear")
-#     output = fetch_darker(name, rarity, hours=24)
-#     output = sorted(output, key=lambda x: x[0])
-#     for x in output:
-#         print(f'{x[0]} {x[1]:>6} {x[2]}')
-#     os.system(f"echo {name} {rarity}")
+asyncio.run(main("Spectral Hilt", "Epic"))
 
 
+# def main(name, rarity):
+#     subprocess.run('clear')
+#     data = fetch_darker(name, rarity, hours=72)
+#     process = process_data(data)
+#     hourly = groupby_hour(process)
+#     graph(name, rarity, hourly)
+#     # return hourly   
+# main("Spectral Hilt", "Epic")
