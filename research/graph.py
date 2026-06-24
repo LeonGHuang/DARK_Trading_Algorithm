@@ -43,28 +43,8 @@ class darkerdb:
                 from_date = (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime("%Y-%m-%d")
                 url =   f"https://api.darkerdb.com/v1/market?item={name.replace('\'', "’")}&rarity={rarity}"\
                         f"&from={from_date}&limit=50&page={page}"
-                print(f"{url}")
+                # print(f"{url}")
                 return url
-
-
-# def fetch_darker(name, rarity, /, hours=24):
-#         start = time.perf_counter()
-#         db = darkerdb()
-#         with requests.Session() as ses:
-#             page_num = 1
-#             price_list = []
-#             while True:
-#                 if page_num > 21: break #! page pagination is now limited to 1000 listings, switch to cursor pagination when fixed
-#                 url = db.market(name, rarity, hours=hours, page=page_num)
-#                 fetch_body = ses.get(url).json()['body']
-#                 price_list.extend((x['created_at'],x['price_per_unit'],x['has_sold']) for x in fetch_body)
-#                 print(url, end='\r')
-#                 if len(fetch_body) <50: break
-#                 page_num += 1
-#             print()
-#             elapsed = time.perf_counter() - start
-#             print(f"took {elapsed:.2f}s")
-#             return (price_list)
 
 
 async def fetch_darker(ses, name, rarity, /, hours=24):
@@ -82,7 +62,6 @@ async def fetch_darker(ses, name, rarity, /, hours=24):
                         fetch = await fetch.json() # waits for body and deserialise it
                         fetch_body = fetch['body']
                         price_list.extend((x['created_at'],x['price_per_unit'],x['has_sold']) for x in fetch_body)
-                        # print(url)
                         if len(fetch_body) <50: stop.set() #! doesnt work right now as page pagination return page 21 for any page > 21
 
         await asyncio.gather(*[worker() for _ in range(5)])
@@ -168,7 +147,7 @@ async def main(name, rarity):
         plot_by_day(name, rarity, process)
         # graph(name, rarity, hourly)
         # return hourly   
-asyncio.run(main("Spectral Hilt", "Epic"))
+asyncio.run(main("Scraps", "Epic"))
 
 
 # def main(name, rarity):
