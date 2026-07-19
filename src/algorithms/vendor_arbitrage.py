@@ -48,7 +48,10 @@ async def main():
         start_time = time.perf_counter()
         target_items = sql_item()
         async with aiohttp.ClientSession() as session:
-                task = [fetch(session, sem, name, rarity, vendor_price) for name, rarity, vendor_price in target_items]
+                task = [
+                fetch(session, sem, name, rarity, vendor_price)
+                for name, rarity, vendor_price in target_items
+                ]
                 rows = await asyncio.gather(*task)
         end_time = time.perf_counter()
         print(f'{len(target_items)} fetch took {end_time - start_time}s')

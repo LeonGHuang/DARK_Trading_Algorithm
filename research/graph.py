@@ -115,12 +115,12 @@ def plot_by_day(name, rarity, data):
         print(grouped)
 
         plt.style.use('mocha')
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize = (12,8))
         ax.plot(grouped)
 
         ax.set_title(f'Daily Prices: {name} ({rarity})')
         ax.set_xlabel('Hour (UTC)')
-        ax.set_ylabel('Unit Price')
+        ax.set_ylabel('Gold (Per Unit)')
 
         ax.set_xticks(range(0, 24, 6))
         ax.set_xlim(0, 23)
@@ -132,6 +132,7 @@ def plot_by_day(name, rarity, data):
         prop={'family': 'monospace'}
         )
         plt.show()
+
 
 
 async def main(name, rarity):
@@ -147,7 +148,7 @@ async def main(name, rarity):
         plot_by_day(name, rarity, process)
         # graph(name, rarity, hourly)
         # return hourly   
-asyncio.run(main("Scraps", "Epic"))
+asyncio.run(main("Scraps", "Legendary"))
 
 
 # def main(name, rarity):
@@ -158,3 +159,5 @@ asyncio.run(main("Scraps", "Epic"))
 #         graph(name, rarity, hourly)
 #         # return hourly   
 # main("Spectral Hilt", "Epic")
+
+

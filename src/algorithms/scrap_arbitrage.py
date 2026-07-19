@@ -41,7 +41,6 @@ class sql_fetch():
                 ORDER BY id
                 """
                 self.cursor.execute(query)
-                
                 return self.cursor.fetchall()
 
 
@@ -103,5 +102,3 @@ def printing():
         for x in output:
                 print(f"{x[0]:<25} {x[4]:>5} {x[1]:>16} {x[2]:>10} {x[3][0:9]}")
 printing()
-
-

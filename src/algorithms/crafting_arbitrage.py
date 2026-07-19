@@ -19,11 +19,9 @@ class recipe_fetch():
 
         def __exit__(self, exc_type, exc_val, exc_tb):
                 self.conn.close()
-                self.conn = None
 
         def __del__(self):
-                if self.conn:
-                        self.conn.close()
+                self.conn.close()
 
         def id_range(self):
                 cursor = self.conn.cursor()
@@ -117,8 +115,14 @@ def _listing_fee(r_avg):
 
 async def process_fetch(session, r, db, sem_limit, recipe_id):
         async with sem_limit:
-                r_task = [db.r_fetch(session, r_amount, r_rarity, r_name) for r_amount, r_rarity, r_name in r.craftable(recipe_id)]
-                i_task = [db.i_fetch(session, i_amount, i_rarity, i_name) for i_amount, i_rarity, i_name in r.ingredients(recipe_id)]
+                r_task = [
+                db.r_fetch(session, r_amount, r_rarity, r_name) 
+                for r_amount, r_rarity, r_name in r.craftable(recipe_id)
+                ]
+                i_task = [
+                db.i_fetch(session, i_amount, i_rarity, i_name)
+                for i_amount, i_rarity, i_name in r.ingredients(recipe_id)
+                ]
                 r_results = await asyncio.gather(*r_task)
                 i_results = await asyncio.gather(*i_task)
 
@@ -145,10 +149,10 @@ async def main(hour):
 
 if __name__ == '__main__': 
         subprocess.run('clear')
-        output = asyncio.run(main(6))
-        # output[1:] = filter(lambda x: x[6]>0, output[1:])
+        output = asyncio.run(main(3))
+        output[1:] = filter(lambda x: x[6]>0, output[1:])
         output[1:] = sorted(output[1:], key=lambda x: x[3], reverse=True)
         for x in output:
-                # print(f"{x[0]:<4} {x[1]:<10} {x[2]:<35} {(x[3]):>8} {x[4]:>8} {x[5]:>8} {x[6]:>8}")
-                print(f"{x[0]:<4} {x[1]:<10} {x[2]:<35} {(x[3]):>8} {x[4]:>8} {x[5]:>8} {x[6]:>8} {x[7]}") #debugging code
+                print(f"{x[0]:<4} {x[1]:<10} {x[2]:<35} {(x[3]):>8} {x[4]:>8} {x[5]:>8} {x[6]:>8}")
+                # print(f"{x[0]:<4} {x[1]:<10} {x[2]:<35} {(x[3]):>8} {x[4]:>8} {x[5]:>8} {x[6]:>8} {x[7]}") #debugging code
             
