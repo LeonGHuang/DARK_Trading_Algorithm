@@ -44,3 +44,18 @@ def connect_pc():
         return conn
     except:
         return sys.exit("connection to sql has failed")
+
+
+def connect_pod():
+    load_dotenv("/home/leon/projs/dark/gitignore/sql.env", override=True)
+    try:
+        conn = psycopg2.connect(
+            host = os.getenv("pod_host"),
+            port = os.getenv("pod_port"),
+            database = os.getenv("pod_database"),
+            user = os.getenv("pod_user"),
+            password = os.getenv("pod_password"),
+        )
+        return conn
+    except:
+        return sys.exit("connection to postgres has failed")
