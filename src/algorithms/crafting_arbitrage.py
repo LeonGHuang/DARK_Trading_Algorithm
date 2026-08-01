@@ -1,6 +1,7 @@
 
 from datetime import datetime, timedelta, timezone
 
+import os
 import sys
 import subprocess
 import numpy as np
@@ -75,7 +76,7 @@ class darkerdb():
                 self.count = 0
 
         async def _api_fetch(self, session, rarity, name):
-                url = f"https://api.darkerdb.com/v1/market?item={name}&rarity={rarity}&from={self.from_date}&limit=50&has_sold=1"
+                url = f"https://api.darkerdb.com/v1/market?key={os.getenv('crafting_arbitrage_key')}&item={name}&rarity={rarity}&from={self.from_date}&limit=50&has_sold=1"
                 response = await session.get(url)
                 output = await response.json()
                 response.release()

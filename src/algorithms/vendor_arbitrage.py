@@ -26,7 +26,7 @@ def sql_item():
 async def fetch(session, conn_limit, name, rarity, vendor_price):
         async with conn_limit:
                 from_date = (datetime.now(timezone.utc) - timedelta(minutes=15)).strftime("%Y-%m-%dT%H:%M:%SZ")
-                url = f"https://api.darkerdb.com/v1/market?item={name}&rarity={rarity}&from={from_date}&limit=50&sold=0"
+                url = f"https://api.darkerdb.com/v1/market?key={os.getenv('vendor_arbitrage_key')}&item={name}&rarity={rarity}&from={from_date}&limit=50&sold=0"
                 # print(url)
                 response = await session.get(url)
                 output = await response.json()
