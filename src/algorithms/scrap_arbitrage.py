@@ -48,11 +48,7 @@ class sql_fetch():
 async def fetch_price(ses, sem_limit, item_id):
         async with sem_limit:
                 from_date = (datetime.now(timezone.utc) - timedelta(minutes=60)).strftime("%Y-%m-%dT%H:%M:%SZ")
-<<<<<<< HEAD
-                url = f"https://api.darkerdb.com/v1/market?item_id={item_id.replace('\'', "'")}&limit=50&sold=0"
-=======
                 url = f"https://api.darkerdb.com/v1/market?key={os.getenv('scrap_price_key')}&item_id={item_id.replace('\'', "'")}&limit=50&sold=0"
->>>>>>> e980b41 (feat: switched to os library to source keys from the new api env file)
                 # print(url)
                 response =  await ses.get(url)
                 data_body = (await response.json())['body']
