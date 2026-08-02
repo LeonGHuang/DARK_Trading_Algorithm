@@ -47,7 +47,7 @@ def connect_pc():
 
 
 def connect_pod():
-    load_dotenv("/home/leon/projs/dark/gitignore/sql.env", override=True)
+    load_dotenv("/home/leon/projs/dark/.env/sql.env", override=True)
     try:
         conn = psycopg2.connect(
             host = os.getenv("pod_host"),
