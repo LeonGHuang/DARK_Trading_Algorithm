@@ -25,14 +25,12 @@ def item_data_fetch():
 
 		count = inital_fetch["pagination"]["count"]
 		total = inital_fetch['pagination']['total']
-		print(f'{count} / {total}')
 
 		while next_cursor != None:
+			print(f'item featch: {count} / {total}', end = '\r')
 			fetch = ses.get(url(next_cursor)).json()
 			body_list.extend(fetch['body'])
 			next_cursor = fetch["pagination"]['next']
 
 			count += int(fetch['pagination']['count'])
-			count += 1
-			print(f'item featch: {count} / {total}')
 	return body_list
