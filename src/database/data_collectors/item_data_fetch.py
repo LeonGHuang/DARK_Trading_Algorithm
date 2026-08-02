@@ -1,21 +1,38 @@
 import requests
 import os
 import pandas as pd
+from dotenv import load_dotenv
+import os
+
+load_dotenv(".env/api.env")
 
 
-def url(page):
-    url = f"https://api.darkerdb.com/v1/items?key={os.getenv("dark_api_key")}&limit=50&page={page}"
-    return url
+def url(cursor=None):
+	if cursor:
+		return f"https://api.darkerdb.com/v2/items?key={os.getenv("general")}&limit=50&cursor={cursor}"
+
+	else:
+		return f"https://api.darkerdb.com/v2/items?key={os.getenv("general")}&limit=50"
+
 
 def item_data_fetch():
-    with requests.Session() as ses:
-        body_list = []
-        num_pages = ses.get(url('1')).json()['pagination']['num_pages']
-        for page in range(1,num_pages + 1):
-            req = ses.get(url(page))
-            body_list.extend(req.json()['body'])
-            print(f'page = {page}/{num_pages}', end="\r")
-    return body_list
+	with requests.Session() as ses:
+		body_list = []
+		inital_fetch = ses.get(url()).json()
 
+		body_list.extend(inital_fetch["body"])
+		next_cursor = inital_fetch["pagination"]['next']
 
-print(os.getenv("dark_api_key"))
+		count = inital_fetch["pagination"]["count"]
+		total = inital_fetch['pagination']['total']
+		print(f'{count} / {total}')
+
+		while next_cursor != None:
+			fetch = ses.get(url(next_cursor)).json()
+			body_list.extend(fetch['body'])
+			next_cursor = fetch["pagination"]['next']
+
+			count += int(fetch['pagination']['count'])
+			count += 1
+			print(f'item featch: {count} / {total}')
+	return body_list
