@@ -33,15 +33,22 @@ def sql_item():
         return cursor.fetchall()
 
 
-async def fetch(session, conn_limit, id, name, rarity, vendor_price):
+async def fetch(session, conn_limit, stop, id, name, rarity, vendor_price):
 	async with conn_limit:
+		if stop.is_set():                      # ← queued task wakes up, sees the flag, never sends
+            		return None
 		from_date = ( datetime.now(timezone.utc) - timedelta(minutes=30) ).replace(tzinfo=None).isoformat()
-		url = f"https://api.darkerdb.com/v2/market?key={os.getenv("vendor_arbitrage_key")}&item_id={id}&from={from_date}&limit=50&sold=0"
+		url = f"https://api.darkerdb.com/v2/market?key={os.getenv('vendor_arbitrage_key')}&item_id={id}&from={from_date}&limit=50&sold=0"
 		# print(url)
-		response = await session.get(url)
-		output = await response.json()
-		response.release()
-		
+
+		try:
+			async with session.get(url) as response:
+				response.raise_for_status()
+				output = await response.json()
+		except aiohttp.ClientResponseError as e:
+			print(f"{name}: HTTP {e.status} {e.message} — skipping")
+			stop.set()
+			return None
 
 		items                   = [(listing['price_per_unit'], listing['quantity']) for listing in output['body']]
 		undercut_items          = list(filter(lambda x: x[0] < vendor_price, items))
@@ -55,24 +62,27 @@ async def fetch(session, conn_limit, id, name, rarity, vendor_price):
 
 async def main():
 	header = [('name', 'extractable', 'vendor_price', 'avg_margin', 'quantity', 'listings')]
-	sem = asyncio.Semaphore(25)
+	sem = asyncio.Semaphore(10)
+	stop = asyncio.Event()
 	start_time = time.perf_counter()
 	target_items = sql_item()
 	async with aiohttp.ClientSession() as session:
 		task = [
-		fetch(session, sem, id, name, rarity, vendor_price)
+		fetch(session, sem, stop, id, name, rarity, vendor_price)
 		for id, name, rarity, vendor_price in target_items
 		]
 		rows = await asyncio.gather(*task)
 	end_time = time.perf_counter()
-	print(f'{len(target_items)} fetch took {end_time - start_time}s')
+	print(f'{sum(r is not None for r in rows)} fetch took {end_time - start_time}s')
+	print(f'{rows.count(None)} / {len(target_items)} failed')
 	return header + list(rows)
 
 
 if __name__ == "__main__":
 	subprocess.run("clear")
 	rows = asyncio.run(main())
-	rows[1:] = filter(lambda x: x[1], rows[1:])
+	rows[1:] = filter(None, rows[1:])
+	# rows[1:] = filter(lambda x: x[1], rows[1:])
 	rows[1:] = sorted(rows[1:], key=lambda x: x[1], reverse=True)
 	for x in rows:
 		print(f"{x[0]:<32} {x[1]:>15} {x[2]:>15} {x[3]:>15} {x[4]:>15}")
