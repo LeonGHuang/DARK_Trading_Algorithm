@@ -34,3 +34,18 @@ def item_data_fetch():
 
 			count += int(fetch['pagination']['count'])
 	return body_list
+
+# testing code
+import os
+if __name__ == "__main__":
+	os.system('clear')
+	data = requests.get(url()).json()['body']	
+	# data = item_data_fetch()
+	cols= list(data[0].keys())
+	rows = [[item.get(key) for key in cols] for item in data]
+	
+	col_query = ", ".join(cols)
+	place_holder = ", ".join(["%s"] * len(cols))
+
+	print(place_holder)
+	print(len(place_holder))
