@@ -1,5 +1,6 @@
 import src.database.scripts.sql as sql
-from src.database.data_collectors.item_data_fetch import item_data_fetchdd
+from src.database.data_collectors.item_data_fetch import item_data_fetch
+import os
 
 def drop_table(cursor):
         query = f"""
@@ -9,12 +10,12 @@ def drop_table(cursor):
 
 def create_table(cursor):
         query = f"""
-                CREATE TABLE IF NOT EXISTS item_data(
+                CREATE TABLE IF NOT EXISTS item_data (
                 id TEXT PRIMARY KEY,
                 archetype TEXT,
                 slug TEXT,
                 name TEXT,
-                flavour TEXT,
+                flavor TEXT,
                 icon TEXT,
                 icon_url TEXT,
                 rarity TEXT,
@@ -44,14 +45,27 @@ def create_table(cursor):
                 """
         cursor.execute(query)
 
+def data_entry(cursor):
+        data = item_data_fetch()
+        cols = list(data[0].keys())
+        rows = [[item.get(key) for key in cols] for item in data]
+        query = f"""
+                INSERT INTO item_data ({", ".join(cols)}) 
+                VALUES ({", ".join(["%s"] * len(cols))})
+                """
+        cursor.executemany(query, rows)
+
 
 def main():
+        os.system('clear')
         conn = sql.connect_pod()
         cursor = conn.cursor()
 
         drop_table(cursor)
         create_table(cursor)
+        data_entry(cursor)
 
         conn.commit()
 
-main()
+if __name__=="__main__":
+        main()
