@@ -39,9 +39,9 @@ async def fetch(session, conn_limit, rate_limit, id, name, rarity, vendor_price)
 	async with conn_limit:
 		if rate_limit.is_set():
 			return None
-		from_date = ( datetime.now(timezone.utc) - timedelta(minutes=15) ).replace(tzinfo=None).isoformat()
+		from_date = ( datetime.now(timezone.utc) - timedelta(minutes=30) ).replace(tzinfo=None).isoformat()
 		url = f"https://api.darkerdb.com/v2/market?key={os.getenv('vendor_arbitrage_key')}&item_id={id}&from={from_date}&limit=50&sold=0"
-		# print(url)
+		print(url)
 
 		try:
 			async with session.get(url) as response:
@@ -82,9 +82,11 @@ async def main():
 
 if __name__ == "__main__":
 	subprocess.run("clear")
+
 	rows = asyncio.run(main())
+
 	rows[1:] = filter(None, rows[1:])
-	# rows[1:] = filter(lambda x: x[1], rows[1:])
+	rows[1:] = filter(lambda x: x[1], rows[1:])
 	rows[1:] = sorted(rows[1:], key=lambda x: x[1], reverse=True)
 	for x in rows:
 		print(f"{x[0]:<40} {x[1]:>15} {x[2]:>15} {x[3]:>15} {f'{x[4]}':>15}")
