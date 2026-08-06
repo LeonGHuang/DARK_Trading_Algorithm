@@ -61,11 +61,11 @@ def main():
         conn = sql.connect_pod()
         cursor = conn.cursor()
 
-        drop_table(cursor)
-        create_table(cursor)
-        data_entry(cursor)
+        # drop_table(cursor)
+        # create_table(cursor)
+        # data_entry(cursor)
 
         conn.commit()
 
-if __name__=="__main__":
-        main()
+# if __name__=="__main__":
+#         main()
