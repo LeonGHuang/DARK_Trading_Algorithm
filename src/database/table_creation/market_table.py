@@ -3,13 +3,13 @@ import os
 
 def drop_table(cursor):
         query = f"""
-                DROP TABLE IF EXISTS history
-                """
+        DROP TABLE IF EXISTS history
+        """
         cursor.execute(query)
 
 def create_table(cursor):
         query = f"""
-                CREATE TABLE IF NOT EXISTS market (
+        CREATE TABLE IF NOT EXISTS market (
                 id BIGINT PRIMARY KEY,
                 cursor BIGINT,
                 item_id TEXT,
@@ -33,8 +33,8 @@ def create_table(cursor):
                 last_seen_at TIMESTAMPTZ,
                 expires_at TIMESTAMPTZ,
                 found_by TEXT, 
-                )
-                """
+        )
+        """
         cursor.execute(query)
 
 def main():
